@@ -1,0 +1,264 @@
+<title>Корпоративный бункер</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: sticky round tabs on top, one round per screen, live score bar at the bottom.
+   Look follows the game's own printed cards: cool grey paper, black ink, one red. */
+:root{
+  --bg:#E6E6E3; --surface:#F4F4F2; --ink:#151515; --muted:#5C5C58; --line:#CDCDC8;
+  --red:#C2261D; --on-red:#FFFFFF; --soft:#EDEDEA; --ok:#1F6B3A;
+  --display:"Bebas Neue","Arial Narrow",Impact,sans-serif;
+  --body:"Montserrat",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111111; --surface:#1B1B1B; --ink:#EDEDEA; --muted:#A0A09A; --line:#333330;
+    --red:#F0493F; --on-red:#111111; --soft:#242424; --ok:#58C27C; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111111; --surface:#1B1B1B; --ink:#EDEDEA; --muted:#A0A09A; --line:#333330;
+  --red:#F0493F; --on-red:#111111; --soft:#242424; --ok:#58C27C; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-block:0 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:720px;margin:0 auto}
+header{padding-block:20px 12px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(44px,12vw,64px);line-height:.95;margin:6px 0 4px;letter-spacing:.01em;text-wrap:balance}
+header p{margin:0;color:var(--muted);font-size:13px}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));
+  padding:8px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:0 0 auto;min-width:46px;height:44px;padding:0 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  font-family:var(--display);font-size:22px;letter-spacing:.03em;border-radius:2px;cursor:pointer;position:relative}
+nav button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+nav button.now::after{content:"";position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--red)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+main{padding-block:18px;display:flex;flex-direction:column;gap:14px}
+.rh{display:flex;flex-direction:column;gap:6px}
+.rh .num{font-family:var(--display);font-size:clamp(52px,15vw,76px);line-height:.9;margin:0;font-weight:400}
+.rh .name{font-weight:700;font-size:19px;margin:0;text-wrap:balance}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{font-size:12px;font-weight:600;padding:3px 9px;border:1px solid var(--line);background:var(--surface);border-radius:2px;font-variant-numeric:tabular-nums}
+.chip.red{background:var(--red);border-color:var(--red);color:var(--on-red)}
+.blk{background:var(--surface);border:1px solid var(--line);border-radius:2px;padding:14px 16px;min-width:0}
+.blk h3{margin:0 0 8px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.blk.warn h3{color:var(--red)}
+.blk p{margin:0 0 8px}.blk p:last-child{margin-bottom:0}
+.blk ol,.blk ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.blk li::marker{color:var(--muted);font-weight:600}
+dl.rub{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:baseline}
+dl.rub dt{font-family:var(--display);font-size:24px;line-height:1;color:var(--red);white-space:nowrap;font-variant-numeric:tabular-nums}
+dl.rub dd{margin:0}
+.key{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
+.key .row{display:grid;grid-template-columns:minmax(96px,32%) minmax(0,1fr);gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+.key .row:first-child{border-top:0}
+.key .row b{font-weight:600;color:var(--muted);font-size:13px}
+.tbl{overflow-x:auto}
+.tbl table{border-collapse:collapse;width:100%;min-width:420px;font-size:13px}
+.tbl th,.tbl td{text-align:left;padding:7px 8px;border-top:1px solid var(--line);vertical-align:top}
+.tbl th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-top:0}
+.tbl td.n{font-variant-numeric:tabular-nums;color:var(--muted);width:2.2em}
+.scores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sc{background:var(--soft);border:1px solid var(--line);padding:10px;border-radius:2px;min-width:0}
+.sc .t{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.step{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.step output{grid-column:1 / -1;order:-1}
+.step button,.tg{min-width:44px;height:48px;border:1px solid var(--ink);background:var(--surface);color:var(--ink);font-size:22px;border-radius:2px;cursor:pointer;font-family:var(--body);font-weight:600}
+.step output{font-family:var(--display);font-size:44px;line-height:1;font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap}
+.step output small{font-family:var(--body);font-size:12px;color:var(--muted)}
+.na{color:var(--muted);font-size:13px;margin:0}
+.rolerow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.rolerow:first-of-type{border-top:0}
+.rolerow .rn{font-weight:700}
+.rolerow .ra{font-size:13px;color:var(--muted);margin-top:2px}
+.tg{width:58px;font-size:14px}
+.tg[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:var(--on-red)}
+.bossin{width:58px;height:44px;border:1px solid var(--ink);background:var(--surface);color:var(--ink);text-align:center;font:600 16px var(--body);border-radius:2px}
+.colh{display:grid;grid-template-columns:minmax(0,1fr) 58px 58px;gap:8px;font-size:11px;letter-spacing:.08em;font-weight:700;color:var(--muted);text-transform:uppercase}
+.colh span:not(:first-child){text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tot td,.tot th{font-variant-numeric:tabular-nums}
+.tot .big td{font-family:var(--display);font-size:34px;line-height:1.1;border-top:2px solid var(--ink)}
+.names{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.names label{font-size:12px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.names input{height:44px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:0 10px;font:500 15px var(--body);border-radius:2px;min-width:0}
+.reset{height:44px;padding:0 14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 14px var(--body);border-radius:2px;cursor:pointer;align-self:flex-start}
+.reset.arm{background:var(--red);border-color:var(--red);color:var(--on-red)}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--ink);color:var(--bg);
+  padding:8px max(16px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.bar .in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bar .tm{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0}
+.bar .tn{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .tv{font-family:var(--display);font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.lead{color:var(--red)}
+.bar .lead{color:inherit;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:2px}
+@media (prefers-reduced-motion:no-preference){button{transition:background .12s,color .12s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">20.10.2026 · 20 столов · по 10 игроков</div>
+    <h1>Корпоративный бункер</h1>
+    <p>Шпаргалка помощника модератора. Две команды, 58 баллов за раунды плюс бонусы.</p>
+  </header>
+  <nav id="tabs" role="tablist" aria-label="Раунды"></nav>
+  <main id="view"></main>
+</div>
+<div class="bar" aria-live="polite"><div class="in" id="bar"></div></div>
+
+<script>
+(function(){
+var MAXTOT=58;
+var R=[
+{id:1,time:'17:10–17:30',s:[17*60+10,17*60+30],name:'Комната ожидания',dur:'20 мин',max:null,
+ essence:'Знакомство. Каждый выбирает карточку роли и отвечает на три вопроса: кто вы, как попали в компанию, почему без вас ничего не решится. Хорошо, если представление яркое.',
+ todo:['Перед стартом конверты не вскрывать до сигнала ведущего.','Помочь найти карточку задания в конверте, если нужно.','Игроки сами выбирают себе роли. Лишние карточки убрать (у вас обе команды по 10, убирать нечего).','Напомнить: суперсила на карточке роли, использовать её можно один раз за игру.'],
+ rub:[['—','Раунд не оцениваем. В бланке ставим прочерки.']],
+ watch:['Шкала «10 / 9 / 8 и меньше» из бланка и «мьют» в плане здесь не применяются.','Микрофоны в Р1 не зачёркиваем.']},
+{id:2,time:'17:30–17:50',s:[17*60+30,17*60+50],name:'Коллеги, какая повестка?',dur:'20 мин',max:4,cap:4,
+ essence:'Сбой почты: у каждого игрока своя карточка с кусочком информации. Они делятся вслух и вместе собирают время, место, кто выступает и что подготовить. Ответ пишут в бланк.',
+ todo:['Помочь команде разобрать карточки (по одной на игрока). Карточки остаются у игроков.','Собрать бланк с ответами.','Выставить баллы.'],
+ rub:[['4','За все четыре поля верно.'],['1','За каждое верное поле бланка (1 балл = 1 ответ).'],['+1','За каждого отсутствующего игрока или роль, только при неполной команде. У вас не применяется.']],
+ key:[['Время','14:30'],['Место','Переговорная №2'],['Подготовить','Ноутбук, финальную презентацию, договор с подрядчиком, бюджет проекта'],['Кто выступает','Начальник, душнила, человек без камеры, скептик, координатор']],
+ extra:'Как команда приходит к ответу: встреча не раньше 14:30; в календаре 15:00, но в чате «сдвинули на полчаса раньше»; №3 только на 4 человека, в №1 нет экрана, №2 занята с 15:00 другой командой; на встрече будет демонстрация, значит нужен ноутбук; печатать ничего не нужно.',
+ watch:['Открыто: в эталоне пять выступающих, а в одной карточке написано «обязательных участников четыре». Зумера в списке нет.','Открыто: карточки про договор с подрядчиком нет. Если команда его не назвала, решайте по ситуации.']},
+{id:3,time:'17:50–18:00',s:[17*60+50,18*60],name:'Что не так?',dur:'10 мин',max:10,cap:10,
+ essence:'Каждый берёт одну из 10 карточек с ошибкой проекта и объясняет её команде только тем способом, который указан в карточке. Команда угадывает и записывает ошибку в бланк (Ошибка 1–10).',
+ todo:['Помочь разобрать по одной карточке на игрока.','Игрок может огласить своё ограничение вслух перед объяснением.','Если команда сдалась и не отгадала, зачёркиваем микрофон у объяснявшего.','Выставить баллы.'],
+ rub:[['10','Максимум, если успели объяснить все ошибки.'],['−1','За каждого игрока, который не смог или не успел объяснить.'],['0','Если карточки убирали из-за неполной команды: ни плюса, ни минуса.']],
+ table:{head:['№','Ошибка (эталон)','Способ'],rows:[
+  ['1','Ген. директор не поставил подпись в договоре','Слова на одну букву'],
+  ['2','На столах лежат материалы не для той группы','Нельзя называть ни один предмет напрямую'],
+  ['3','В расписании указано неправильное время начала','Слова на одну букву'],
+  ['4','Фамилия спикера написана с ошибкой','Нельзя «имя», «фамилия», «ошибка», «спикер»'],
+  ['5','Расчёты сделали неверно','Жестами, без слов'],
+  ['6','«Логотип размещён неровно»','Другими 3 словами-синонимами'],
+  ['7','На бейджах перепутаны должности двух сотрудников','Только вопросами'],
+  ['8','В письме участникам указан неправильный адрес','Как прогноз погоды'],
+  ['9','На экране стоит старая версия презентации','Ровно тремя словами'],
+  ['10','Бухгалтер очень ругала этот проект','Используя антонимы']]},
+ extra:'Проверять бланк по формулировке ошибки на карточках команды. Одна карточка занимает около минуты.',
+ watch:['Нарушения ограничений на двух столах не проследить. Опираемся на честность, капитан записывает ответы в бланк.','Зачёркнутый микрофон на баллы не влияет и на игру не влияет, это шутка для атмосферы.']},
+{id:4,time:'18:20–18:25',s:[18*60+20,18*60+25],name:'Передай нормально',dur:'5 мин',max:10,cap:10,
+ essence:'Две части по принципу «сломанного телефона». Сначала картинка из пяти предметов, затем фраза. Передаём по кругу, последний игрок пишет результат в бланк. Всё за 5 минут, один круг по столу.',
+ todo:['По команде ведущего достать картинку и дать начальнику. Смотрит 15 секунд, больше её никто не видит, картинку убираем.','Он рассказывает следующему, что увидел, дальше по кругу. Последний записывает в бланк (Часть 1).','По команде ведущего дать карточку с фразой. Первый смотрит около 15 секунд, пересказывает по цепочке (лучше на ухо). Последний записывает (Часть 2).','Модератор последнего игрока просит внести ответ в бланк. Никто не подсказывает.','Конверт не заклеен, карточки достаём сами. Эталон берём из карточек конверта этой команды.']
+ ,rub:[['5','Картинка: верно отражена последовательность (по 1 баллу за предмет, 5 предметов).'],['5','Фраза: пропущено 1–2 слова.'],['4','Фраза: пропущено 3–4 слова.'],['3','Фраза: другими словами, но смысл тот же.'],['0','Фраза: хуже этого.']],
+ extra:'Пример эталона (не у всех команд такой): блокнот, ноутбук, кружка, батарейка, документ «7 млн»; «Фраза 15»: пятница, 18:00, переговорная «Питер», отпраздновать запуск проекта, пицца с ананасами. Слово в слово не нужно, главное передать суть.',
+ watch:['Все предметы названы в верном порядке и фраза передана: это максимум. Остальные случаи решаем по ситуации.','Если начальник сразу всё забыл, передавать нечего. Если просят подсказку (суперсила), называем верную фразу.']},
+{id:5,time:'18:25–18:30',s:[18*60+25,18*60+30],name:'Alias наоборот',dur:'5 мин',max:8,cap:8,
+ essence:'Даны определения, нужно угадать корпоративные слова и записать в бланк «Слово 1–8». Успеть можно не все.',
+ todo:['Отдаём сразу весь конверт.','Следить, чтобы команда верно записала ответы в бланк.','Выставить баллы.'],
+ rub:[['1','За каждое верное слово, максимум 8.'],['✓','Слова, близкие по смыслу, засчитываем.']],
+ table:{head:['№','Слово','Определение (коротко)'],rows:[
+  ['1','Дедлайн','Всегда завтра, все не успевают'],['2','Совещание','Могло быть письмом'],['3','Кулер','Стоит в углу, место встречи'],['4','Отпуск','Ждут весь год'],
+  ['5','Премия','Приходит в декабре'],['6','Отчёт','Просят вчера, читают никогда'],['7','Бюджет','Он как бы есть, но его нет, не резиновый'],['8','Пропуск','Просят каждый раз, без него не в офисе']]},
+ watch:['Орфографию не оцениваем.','Открыто: засчитывать ли, если слова 7 и 8 записаны верно, но в обратном порядке.']},
+{id:6,time:'18:30–18:35',s:[18*60+30,18*60+35],name:'Голосовое на 2×',dur:'5 мин',max:6,cap:6,
+ essence:'Директор прислал голосовое на двойной скорости. Команда слушает один раз по QR-коду с телефона, обсуждает и отвечает на 6 вопросов.',
+ todo:['Команда сама включает аудио по QR-коду на карточке. Подходить не нужно.','Если команда просит подсказку, QR-карточку можно дать как подсказку.','Выставить баллы.'],
+ rub:[['1','За каждый верный ответ, максимум 6.'],['✓','Схожие по смыслу ответы засчитываем.']],
+ key:[['1. Что уже согласовано?','Первый вариант (не второй)'],['2. Что заменить?','Главную фотографию'],['3. Что убрать?','Один слайд'],['4. Что нельзя менять?','Логотип'],['5. Что проверить?','Ссылки'],['6. Когда нужна работа?','Сегодня/завтра, засчитываем любой вариант']],
+ watch:['На карточке сказано слушать один раз. Переслушивание только если команда сама об этом попросит и вы решили разрешить.']},
+{id:7,time:'18:35–18:40',s:[18*60+35,18*60+40],name:'Зачёркнуто',dur:'5 мин',max:10,cap:11,
+ essence:'Шуточное письмо с 10 пропусками. Команда читает вслух, по очереди предлагает слова. Варианты: смешные, серьёзные, очень смешные, очень серьёзные. Правильных ответов нет.',
+ todo:['Дать конверт, объяснить, что нужно заполнить оригинально, не логично.','Оценить письмо целиком на своё усмотрение.'],
+ rub:[['10','Все пропуски заполнены, смысл не потерян, слова весёлые и приличные.'],['5','Заполнено наполовину или скучно, предсказуемо.'],['+1','Если в письме настоящая фамилия коллеги из их компании.']],
+ watch:['Одна общая оценка за письмо, не за каждое слово.','Открыто: сказали ли про минус за слово «огорчили». Решайте по ситуации.']},
+{id:8,time:'18:40–18:45',s:[18*60+40,18*60+45],name:'МЕМО (финал)',dur:'5 мин',max:10,cap:10,
+ essence:'Из хаотичных заметок восстановить повестку встречи. Правильный ответ: ребрендинг кулера (новое имя, логотип, мерч).',
+ todo:['Выдать конверт и большую карточку «Заметки» (одна на команду, у вас две).','Оценить на своё усмотрение, одна оценка за раунд.'],
+ rub:[['10','Повестка названа достаточно точно, названы новое имя, логотип и мерч, и команда добавила своё, развив идею.'],['8–9','Близко к теме: ребрендинг или брендирование кулера.'],['5','Креативно, но мимо кулера.'],['0','Ничего.']],
+ key:[['Подсказки на карточке','«Весёлый водовоз», «связано с водой», кулер со смайликом, «бренд», «надо ребрендить», «связано с логотипом», «поднять корпоративный дух», «а где бюджет?»']],
+ watch:['Мерч, логотип и новое имя обязательны для высокой оценки.','Кулер с вином или виски: шутка, смело ставим максимум, если идея развита.']}
+];
+var ROLES=[
+{k:'boss',n:'Начальник',a:'Может потребовать у модератора максимум баллов за раунд. Впишите доп. баллы (до максимума раунда).',boss:1},
+{k:'zoom',n:'Зумер',a:'Сделал с командой тренд из ТикТока',p:1},
+{k:'gen',n:'Генератор идей',a:'Предложил ответ на раунд с пометкой «идея от генератора»',p:1},
+{k:'skep',n:'Скептик',a:'Убедил команду исправить ответ в бланке на другой. Верный ответ не отменяется, это просто доп. балл',p:1},
+{k:'dush',n:'Душнила',a:'Позвал модератора и «подушнил»',p:1},
+{k:'off',n:'Оффтопер',a:'Рассказал оффтоп-историю для всех',p:1},
+{k:'nocam',n:'Человек без камеры',a:'Команда хором спела песню',p:1},
+{k:'coord',n:'Координатор',a:'Просит показать задания других раундов. Конверт следующего раунда только ему, отметьте в листе',p:0},
+{k:'q',n:'«У меня один вопрос»',a:'Задаёт модератору доп. вопрос, вы отвечаете',p:0},
+{k:'late',n:'Опоздавший',a:'Просит ещё 1 минуту: забрать бланк на минуту позже',p:0}
+];
+var KEY='bunker-2026-10-20';
+var S={tab:'1',sc:{1:{},2:{}},bn:{1:{},2:{}},boss:{1:0,2:0},nm:{1:'Юг на Волге',2:'Сибур'}};
+var DEF={1:'Юг на Волге',2:'Сибур'};
+try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);for(var k in o)S[k]=o[k];}}catch(e){}
+if(!S.nm[1]||S.nm[1]==='Команда 1')S.nm[1]=DEF[1];if(!S.nm[2]||S.nm[2]==='Команда 2')S.nm[2]=DEF[2];
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function nowId(){var d=new Date(),m=d.getHours()*60+d.getMinutes();for(var i=0;i<R.length;i++){if(m>=R[i].s[0]&&m<R[i].s[1])return String(R[i].id);}return null;}
+var NOW=nowId();
+if(NOW&&!localStorage.getItem(KEY)){S.tab=NOW;}
+function roundSum(t){var s=0;R.forEach(function(r){if(r.max)s+=+S.sc[t][r.id]||0;});return s;}
+function bonusSum(t){var s=0;ROLES.forEach(function(r){if(r.p&&S.bn[t][r.k])s+=r.p;});return s+(+S.boss[t]||0);}
+function total(t){return roundSum(t)+bonusSum(t);}
+function bar(){var a=total(1),b=total(2);
+  document.getElementById('bar').innerHTML=[1,2].map(function(t){var v=t==1?a:b,lead=(t==1?a>b:b>a);
+    return '<div class="tm"><span class="tn'+(lead?' lead':'')+'">'+esc(S.nm[t])+'</span><span class="tv">'+v+'</span></div>';}).join('');}
+function tabs(){var h=R.map(function(r){var id=String(r.id);return '<button role="tab" data-tab="'+id+'" aria-selected="'+(S.tab===id)+'"'+(NOW===id?' class="now" title="Сейчас"':'')+'>Р'+id+'</button>';}).join('');
+  h+='<button role="tab" data-tab="b" aria-selected="'+(S.tab==='b')+'">Бонусы</button><button role="tab" data-tab="t" aria-selected="'+(S.tab==='t')+'">Итог</button>';
+  document.getElementById('tabs').innerHTML=h;}
+function stepper(r){var h='<div class="scores">';[1,2].forEach(function(t){var v=+S.sc[t][r.id]||0;
+  h+='<div class="sc"><div class="t">'+esc(S.nm[t])+'</div><div class="step"><button data-st="-1" data-t="'+t+'" data-r="'+r.id+'" aria-label="Минус балл">−</button><output>'+v+'<small> / '+r.max+'</small></output><button data-st="1" data-t="'+t+'" data-r="'+r.id+'" aria-label="Плюс балл">+</button></div></div>';});
+  return h+'</div>';}
+function roundView(r){
+  var h='<div class="rh"><p class="num">Раунд '+r.id+'</p><p class="name">'+esc(r.name)+'</p><div class="chips"><span class="chip">'+r.time+'</span><span class="chip">'+r.dur+'</span>'+
+   (r.max?'<span class="chip red">до '+r.max+' баллов</span>':'<span class="chip">не оцениваем</span>')+(NOW===String(r.id)?'<span class="chip">идёт сейчас</span>':'')+'</div></div>';
+  h+='<div class="blk"><h3>Суть</h3><p>'+esc(r.essence)+'</p></div>';
+  h+='<div class="blk"><h3>Что делаете</h3><ol>'+r.todo.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol></div>';
+  h+='<div class="blk"><h3>Как ставить баллы</h3><dl class="rub">'+r.rub.map(function(x){return '<dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd>';}).join('')+'</dl></div>';
+  if(r.key)h+='<div class="blk"><h3>Верные ответы</h3><div class="key">'+r.key.map(function(x){return '<div class="row"><b>'+esc(x[0])+'</b><span>'+esc(x[1])+'</span></div>';}).join('')+'</div></div>';
+  if(r.table)h+='<div class="blk"><h3>Эталон</h3><div class="tbl"><table><thead><tr>'+r.table.head.map(function(x){return '<th>'+esc(x)+'</th>';}).join('')+'</tr></thead><tbody>'+
+    r.table.rows.map(function(row){return '<tr>'+row.map(function(c,i){return '<td'+(i===0?' class="n"':'')+'>'+esc(c)+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div></div>';
+  if(r.extra)h+='<div class="blk"><h3>Заметка</h3><p>'+esc(r.extra)+'</p></div>';
+  if(r.watch)h+='<div class="blk warn"><h3>Внимание</h3><ul>'+r.watch.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+  h+='<div class="blk"><h3>Баллы команд'+(r.max?'':'')+'</h3>'+(r.max?stepper(r):'<p class="na">В этом раунде баллы не ставим. В бланке прочерки.</p>')+'</div>';
+  return h;}
+function bonusView(){
+  var h='<div class="rh"><p class="num">Бонусы</p><p class="name">Суперсилы по ролям</p></div>';
+  h+='<div class="blk"><h3>Правила</h3><ul><li>Суперсила одноразовая, игроки знают её (написана на карточке роли).</li><li>Отмечаете сами, когда видите действие. Не отмечайте повторно.</li><li>Если роли в команде нет, бонус не выдаём.</li></ul></div>';
+  h+='<div class="blk"><div class="colh"><span>Роль</span><span>'+esc(S.nm[1])+'</span><span>'+esc(S.nm[2])+'</span></div>';
+  ROLES.forEach(function(r){
+    h+='<div class="rolerow"><div><div class="rn">'+esc(r.n)+(r.p?' · +'+r.p:'')+'</div><div class="ra">'+esc(r.a)+'</div></div>';
+    [1,2].forEach(function(t){
+      if(r.boss)h+='<input class="bossin" type="number" inputmode="numeric" min="0" max="10" id="boss'+t+'" data-boss="'+t+'" value="'+(S.boss[t]||0)+'" aria-label="Доп. баллы начальника, '+esc(S.nm[t])+'">';
+      else h+='<button class="tg" data-bn="'+r.k+'" data-t="'+t+'" aria-pressed="'+(!!S.bn[t][r.k])+'">'+(S.bn[t][r.k]?(r.p?'+'+r.p:'да'):(r.p?'+'+r.p:'отм.'))+'</button>';});
+    h+='</div>';});
+  return h+'</div>';}
+var armed=false;
+function totalView(){
+  var h='<div class="rh"><p class="num">Итог</p><p class="name">Баллы после Р8, подсчёт 18:45–19:00</p></div>';
+  h+='<div class="blk"><h3>Команды</h3><div class="names"><label for="nm1">Команда 1<input id="nm1" data-nm="1" value="'+esc(S.nm[1])+'"></label><label for="nm2">Команда 2<input id="nm2" data-nm="2" value="'+esc(S.nm[2])+'"></label></div></div>';
+  var a=total(1),b=total(2);
+  h+='<div class="blk tot"><h3>Сумма</h3><div class="tbl"><table><thead><tr><th>Раунд</th><th>'+esc(S.nm[1])+'</th><th>'+esc(S.nm[2])+'</th></tr></thead><tbody>';
+  R.forEach(function(r){h+='<tr><td>Р'+r.id+(r.max?' <span style="color:var(--muted)">/ '+r.max+'</span>':'')+'</td><td>'+(r.max?(+S.sc[1][r.id]||0):'—')+'</td><td>'+(r.max?(+S.sc[2][r.id]||0):'—')+'</td></tr>';});
+  h+='<tr><td>Бонусы</td><td>'+bonusSum(1)+'</td><td>'+bonusSum(2)+'</td></tr><tr class="big"><td>Всего</td><td class="'+(a>b?'lead':'')+'">'+a+'</td><td class="'+(b>a?'lead':'')+'">'+b+'</td></tr></tbody></table></div>'+
+   '<p class="na" style="margin-top:8px">Максимум за раунды: '+MAXTOT+'. Красным подсвечена команда с большим счётом.</p></div>';
+  h+='<div class="blk warn"><h3>Открытые вопросы</h3><ul><li>Р2: пять выступающих или четыре, нужен ли договор с подрядчиком.</li><li>Р5: порядок слов 7 и 8.</li><li>Р7: есть ли минус за «огорчили».</li><li>Как сдаём итоговые баллы ведущему и что делаем при равенстве.</li></ul></div>';
+  h+='<button class="reset'+(armed?' arm':'')+'" data-reset="1">'+(armed?'Точно сбросить все баллы?':'Сбросить все баллы')+'</button>';
+  return h;}
+function render(){tabs();var v=document.getElementById('view');
+  if(S.tab==='b')v.innerHTML=bonusView();else if(S.tab==='t')v.innerHTML=totalView();
+  else v.innerHTML=roundView(R[+S.tab-1]);
+  bar();var act=document.querySelector('#tabs [aria-selected="true"]');if(act&&act.scrollIntoView)act.scrollIntoView({inline:'center',block:'nearest'});}
+document.addEventListener('click',function(e){
+  var el=e.target.closest('button');if(!el)return;
+  if(el.dataset.tab){S.tab=el.dataset.tab;armed=false;save();render();window.scrollTo(0,0);return;}
+  if(el.dataset.st){var r=R[+el.dataset.r-1],t=el.dataset.t,v=(+S.sc[t][r.id]||0)+(+el.dataset.st);v=Math.max(0,Math.min(r.cap,v));S.sc[t][r.id]=v;save();render();return;}
+  if(el.dataset.bn){var t2=el.dataset.t;S.bn[t2][el.dataset.bn]=!S.bn[t2][el.dataset.bn];save();render();return;}
+  if(el.dataset.reset){if(!armed){armed=true;render();}else{S.sc={1:{},2:{}};S.bn={1:{},2:{}};S.boss={1:0,2:0};armed=false;save();render();}}
+});
+document.addEventListener('input',function(e){var el=e.target;
+  if(el.dataset.nm){S.nm[el.dataset.nm]=el.value||DEF[el.dataset.nm];save();bar();}
+  if(el.dataset.boss){var v=Math.max(0,Math.min(10,parseInt(el.value,10)||0));S.boss[el.dataset.boss]=v;save();bar();}
+});
+render();
+})();
+</script>
